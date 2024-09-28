@@ -6,15 +6,43 @@ import { z } from 'zod';
 
 const FormSchema = z.object({
     id: z.string(),
-    customerId: z.string(),
-    amount: z.coerce.number(),
-    status: z.enum(['pending', 'paid']),
+    customerId: z.string({
+        invalid_type_error: 'Please select a customer.',
+    }),
+    amount: z.coerce
+        .number()
+        .gt(0, { message: 'Please enter an amount greater than $0.' }),
+    status: z.enum(['pending', 'paid'], {
+        invalid_type_error: 'Please select an invoice status.',
+    }),
     date: z.string(),
 });
 
 const CreateInvoice = FormSchema.omit({ id: true, date: true });
 
-export const createInvoice = async (formData: FormData) => {
+export type State = {
+    errors?: {
+        customerId?: string[];
+        amount?: string[];
+        status?: string[];
+    };
+    message?: string | null;
+};
+
+export async function createInvoice(prevState: State, formData: FormData) {
+    const validatedFields = CreateInvoice.safeParse({
+        customerId: formData.get('customerId'),
+        amount: formData.get('amount'),
+        status: formData.get('status'),
+    });
+    // console.log(validatedFields)
+    // If form validation fails, return errors early. Otherwise, continue.
+    if (!validatedFields.success) {
+        return {
+            errors: validatedFields.error.flatten().fieldErrors,
+            message: 'Missing Fields. Failed to Create Invoice.',
+        };
+    }
     const { customerId, amount, status } = CreateInvoice.parse({
         customerId: formData.get('customerId'),
         amount: formData.get('amount'),
@@ -29,7 +57,7 @@ export const createInvoice = async (formData: FormData) => {
     //     customerId: customerId,
     //     status: status,
     // };
-    console.log(customerId, amountInCents, status, date);
+    // console.log(customerId, amountInCents, status, date);
     try {
         await sql`
     INSERT INTO invoices (customer_id, amount, status, date)
@@ -40,7 +68,6 @@ export const createInvoice = async (formData: FormData) => {
             message: `Database error: failed to create invoice`,
         }
     }
-
     revalidatePath('/dashboard/invoices');
     redirect('/dashboard/invoices');
 }
