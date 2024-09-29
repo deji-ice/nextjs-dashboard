@@ -76,6 +76,7 @@ export type FormattedCustomersTable = {
 };
 
 export type CustomerField = {
+  image_url: string | StaticImport;
   id: string;
   name: string;
 };
