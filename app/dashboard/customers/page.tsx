@@ -2,8 +2,12 @@ import Table from "@/app/ui/customers/table";
 import { lusitana } from "@/app/ui/fonts";
 import Search from "@/app/ui/search";
 import { CustomersTableSkeleton } from "@/app/ui/skeletons";
+import { Metadata } from "next";
 import React, { Suspense } from "react";
 
+export const metadata: Metadata = {
+  title: "Customers",
+};
 const Page = async ({
   searchParams,
 }: {
